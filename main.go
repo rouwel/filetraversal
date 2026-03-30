@@ -10,7 +10,8 @@ func main() {
 
 	info, err := os.Stat(filename)
 	if err != nil {
-		fmt.Println("Path does not exist")
+		fmt.Printf("Path does not exist:%v\n", err)
+		return
 	}
 
 	if info.IsDir() {
