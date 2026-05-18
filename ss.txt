@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Code Upload Form</title>
+</head>
+<body>
+    <h2>Upload or Take a Photo of a QR Code</h2>
+    
+    <!-- enctype="multipart/form-data" is required for file uploads -->
+    <form action="/submit-qr" method="POST" enctype="multipart/form-data">
+        <label for="qr_image">Select Image / Take Photo:</label>
+        <input type="file" id="qr_image" name="qr_image" accept="image/*" capture="environment" required>
+        
+        <br><br>
+        <button type="submit">Upload and Decode</button>
+    </form>
+</body>
+</html>
+
+
+package main
+
+import (
+	"fmt"
+	"image"
+	_ "image/jpeg" // Register JPEG format
+	_ "image/png"  // Register PNG format
+	"net/http"
+
+	"://github.com"
+)
+
+func formHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "index.html")
+}
+
+func submitHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 1. Retrieve the file from the form submission
+	file, _, err := r.FormFile("qr_image")
+	if err != nil {
+		http.Error(w, "Error retrieving the file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// 2. Decode the uploaded file into a standard Go image.Image
+	img, _, err := image.Decode(file)
+	if err != nil {
+		http.Error(w, "Invalid image format. Please upload JPEG or PNG.", http.StatusBadRequest)
+		return
+	}
+
+	// 3. Use the Go library to search for and decode the QR code in the image
+	qrCode, err := qrcode.Recognize(img)
+	if err != nil {
+		http.Error(w, "Could not find or decode a valid QR code in the image.", http.StatusUnprocessableEntity)
+		return
+	}
+
+	// 4. Successfully read the data
+	scannedData := qrCode.Content
+	fmt.Printf("Successfully decoded QR data on server: %s\n", scannedData)
+
+	w.Header().Set("Content-Type", "text/plain")
+	fmt.Fprintf(w, "Success! Decoded QR Data: %s", scannedData)
+}
+
+func main() {
+	http.HandleFunc("/", formHandler)
+	http.HandleFunc("/submit-qr", submitHandler)
+
+	fmt.Println("Server starting at http://localhost:8080")
+	http.ListenAndServe(":8080", nil)
+}
