@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html>
     <body>
-        <h1>Success here is your page</h1>
+        <h1>QR code upload form</h1>
+        <form action="/submit-qr" method="POST" enctype="multipart/form-data">
+            <label>Scan qr code </label>
+            <input type="file" id="qr-image" accept="image*/" capture="environment" required>
+            <br><br>
+
+            <button type="submit">Upload</button>
+
+        </form>
     </body>
-</html>
+</html> 
